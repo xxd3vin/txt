@@ -1,3 +1,8 @@
+/**
+ * 从www.yikanxiaoshuo.com下载小说
+ * 《愿无深情可相守》
+ */
+
 const puppeteer = require('puppeteer');
 const debug = require('debug')('txt');
 const fs = require('fs');
@@ -27,7 +32,7 @@ async function run(url = 'http://www.yikanxiaoshuo.com/yikan/438447/62417528.htm
   const tocUrl = 'http://www.yikanxiaoshuo.com/yikan/438447/';
   debug('跳转到页面并获取所有章节', tocUrl);
   await page.goto(tocUrl, {
-    networkIdleTimeout: 5000,
+    networkIdleTimeout: 500,
     waitUntil: 'networkidle',
     timeout: 3000000
   })
@@ -59,40 +64,42 @@ async function run(url = 'http://www.yikanxiaoshuo.com/yikan/438447/62417528.htm
   async function chapter(url = 'http://www.yikanxiaoshuo.com/yikan/438447/62417528.html') {
     debug('跳转到页面', url);
     await page.goto(url, {
-      networkIdleTimeout: 5000,
+      networkIdleTimeout: 1000,
       waitUntil: 'networkidle',
       timeout: 3000000
     })
       .catch((error) => {
         warn('调用page.goto()时候出现异常：', error.message);
       });
-  
+
     // 获取页面中的文本内容
+    debug('获取页面文本内容');
     const content = await page.evaluate(() => document.getElementById('content').textContent);
     const title = await page.evaluate(() => document.getElementsByTagName('h1')[0].textContent);
     txt += title + '\n\n' + content.replace('chaptererror();章节错误,没有更新,点此举报!', '');
+    debug('写入临时文件tmp.txt');
     fs.writeFile("tmp.txt", txt, function(err) {
       if(err) {
           return console.log('写入tmp.txt错误：', err);
       }
-      console.log("The file was saved!");
-    }); 
+      console.log("tmp.txt, the file was saved!");
+    });
   }
 
-  // await chapter();
-
+  debug('开始下载每一个章节');
   for (let i = 0; i < urls.length; i++) {
     const o = urls[i];
     console.log('开始处理标题:', o.title, 'url:', o.url);
     await chapter(o.url);
   }
 
+  debug('写入最终文件');
   fs.writeFile("output.txt", txt, function(err) {
-      if(err) {
-          return console.log(err);
-      }
-      console.log("The file was saved!");
-  }); 
+    if(err) {
+      return console.log(err);
+    }
+    console.log("output.txt, the file was saved!");
+  });
 
   await browser.close();
 }
