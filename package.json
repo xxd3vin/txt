@@ -4,7 +4,7 @@
   "description": "txt",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "DEBUG=txt* node index.js"
   },
   "author": "Devin Chen",
   "license": "MIT",

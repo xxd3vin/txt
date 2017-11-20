@@ -7,6 +7,9 @@ const puppeteer = require('puppeteer');
 const debug = require('debug')('txt');
 const fs = require('fs');
 
+// 从166集开始下载
+const START_CHAPTER = '166';
+
 function warn(...arg) {
   console.warn('[txt::index.js] [WARN]', ...arg);
 }
@@ -43,7 +46,7 @@ async function run(url = 'http://www.yikanxiaoshuo.com/yikan/438447/62417528.htm
   // [
   //   { title: '', url: 'http://www.yikanxiaoshuo.com/yikan/438447/62417541.html' },
   // ]
-  const urls = await page.evaluate(() => {
+  const chapters = await page.evaluate(() => {
     const dds = document.getElementsByTagName('dl')[0].querySelectorAll('dd');
     const list = [];
     dds.forEach((dd, idx) => {
@@ -57,7 +60,7 @@ async function run(url = 'http://www.yikanxiaoshuo.com/yikan/438447/62417528.htm
     });
     return list;
   });
-  console.log('获取到所有的章节URL：', urls);
+  console.log('获取到所有的章节URL：', chapters);
 
   let txt = '';
 
@@ -86,11 +89,20 @@ async function run(url = 'http://www.yikanxiaoshuo.com/yikan/438447/62417528.htm
     });
   }
 
+  debug('找到需要开始下载的第一个章节，比如166集');
+  let startChapterIdx = 0;
+  chapters.forEach((chapter, idx) => {
+    if (chapter.title.startsWith(START_CHAPTER)) {
+      startChapterIdx = idx;
+    }
+  });
+  debug(`准备从第${startChapterIdx}开始下载`);
+
   debug('开始下载每一个章节');
-  for (let i = 0; i < urls.length; i++) {
-    const o = urls[i];
-    console.log('开始处理标题:', o.title, 'url:', o.url);
-    await chapter(o.url);
+  for (let i = startChapterIdx; i < chapters.length; i++) {
+    const chapter = chapters[i];
+    debug('开始处理标题:', chapter.title, 'url:', chapter.url);
+    await chapter(chapter.url);
   }
 
   debug('写入最终文件');
